@@ -24,10 +24,20 @@ The scan proposes resource-data updates through a pull request. It does **not** 
 
 ### Operation and results
 
-1. The read-only scan job reads the current Decision Index and linked news/artifacts, refreshes existing sources, follows one level of dependency links, and runs the configured scholarly discovery queries. Scheduled runs do not impose a new-candidate count cap; this is bounded discovery, not a scan of the entire web. The job rebuilds the index and validates the resulting data.
+1. The read-only scan job reads the current Decision Index and linked news/artifacts, includes primary arXiv URLs from the generated [curated paper catalog](../site/papers.json), refreshes existing sources, follows one level of dependency links, and runs the configured scholarly discovery queries. Scheduled runs do not impose a new-candidate count cap; this is bounded discovery, not a scan of the entire web. The job rebuilds the index and validates the resulting data.
 2. A separate publication job checks the permitted output files before receiving its publication token. Material changes are proposed on `automation/source-scan` with the title `chore: refresh public source index`; subsequent updates reuse the open PR.
 3. Unchanged source content keeps its existing evidence and retrieval timestamps. A clock change alone should not create a new data update. Fetch failures are reported, with previous successful evidence retained rather than dropped or relabeled as a new successful fetch.
 4. Automated collection never grants `editorial_reviewed`. If a previously reviewed source changes, the old reviewed record remains distinguishable from the new material awaiting review.
+
+Catalog entries supply discovery URLs, not evidence grades or source hashes. The scanner validates the entire local catalog before making network requests, accepts only primary arXiv paper URLs, deduplicates versions, and respects curated exclusions before fetching. A malformed catalog stops with a bounded diagnostic. A successful primary landing-page check is still not a full-paper review; unavailable content retains only the evidence actually obtained.
+
+Canonical paper identities are shared across both ledgers, while a curated version URL remains the actual fetch target. A paper already held in the research ledger is not counted again when the ecosystem or scholarly discovery path encounters it. Historical duplicate rows are retained; new observations go to an existing owner rather than creating another copy.
+
+Fixed-version primary-abstract records retain their original evidence, dates and `abstract_checked` grade. The scanner also observes the current public arXiv version; a changed abstract or newly observed version becomes a review candidate instead of silently replacing the pinned record. A new version with an unchanged abstract still remains distinguishable. Repeated identical observations preserve the pending record, and later fetch failures do not erase it. These items use the existing `editorial_refresh_candidates` report field for compatibility; that field does not grant an editorial-review grade.
+
+The PR publisher checks this version continuity too: a pending v3 cannot be replaced by an unknown-version or v2 candidate from a later scan. Accepting a pending revision requires both its version and evidence hash to match the retained record. The six-file publication allowlist and separate read-only collection/write-publication jobs are unchanged. Validation for this fix included 107 offline tests and a bounded replay of six previously retrieved primary pages through parsing, routing and merging; the replay preserved the research ledger byte-for-byte with no false additions. It made no network requests and was not a full live source scan.
+
+The scan report records `error_code_counts` across **all** issues before limiting `errors` to 100 examples. `error_count`, `error_examples_count`, and `error_examples_truncated` distinguish the total from the displayed sample. Fetch diagnostics retain only fixed, allowlisted codes such as `http_429` or `network_failure`; arbitrary exception messages and response bodies are not published. These fields describe observed failures, not an inferred provider outage or cause.
 
 Use **Actions → Scan public sources → Run workflow**, selecting `main`, to trigger the same process manually. A successful scan is not proof that a PR was merged or the website was deployed; inspect the run summary and the proposed diff separately.
 
@@ -43,7 +53,7 @@ GitHub may place CI for a PR created or updated with `GITHUB_TOKEN` in an approv
 
 GitHub schedules are best-effort: runs may be delayed, and public-repository schedules can be disabled after 60 days without repository activity. See [GitHub's schedule documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule). If the schedule is disabled, re-enable it in Actions and inspect a manual run before relying on later scans.
 
-**Operational check, 2026-10-16:** the [full manual scan and publication run](https://github.com/reacher-z/Awesome-Jev/actions/runs/38848656459) succeeded. A temporary, read-only five-minute UTC probe produced no `event=schedule` runs during **06:50:35–07:05:33 UTC**, covering the 06:55, 07:00, and 07:05 opportunities. The probe was then removed. The twice-daily schedule remains configured, but automatic cron execution has not yet been demonstrated; the cause of the missing events is unconfirmed.
+**Operational check, 2026-10-16:** the [full manual scan and publication run](https://github.com/reacher-z/Awesome-Jev/actions/runs/38848656459) succeeded. A temporary, read-only five-minute UTC probe produced no `event=schedule` runs during **06:50:35–07:05:33 UTC** and was removed. A later [genuine scheduled run](https://github.com/reacher-z/Awesome-Jev/actions/runs/38877935151), recorded as `event=schedule` at **09:04:22 UTC**, completed successfully and opened [PR #3](https://github.com/reacher-z/Awesome-Jev/pull/3). Its source-retrieval report was partial, with 103 issues; workflow success does not mean every source was fetched. This establishes automatic triggering, but does not establish execution exactly at the configured local times or explain the earlier missing events.
 
 ### Trust and publication boundaries
 
@@ -139,7 +149,11 @@ Preserve the individual licenses of third-party resources. A repository license 
 
 扫描通过 `automation/source-scan` 分支创建或更新同一个待审 PR，标题为 `chore: refresh public source index`。**不会自动合并、自动把发现项加入精选 README，也不会自动同步网站镜像。** 维护者核对来源与差异、合并后，再按发布流程同步。
 
-定时扫描覆盖当前 Decision Index、其动态与链接材料、已有来源、一层依赖链接和已配置的学术查询；不设新增候选数量上限，但不代表扫描整个互联网。手动运行可选择全部候选或 100／300 项上限。`smoke` 只进行小规模公开网络试运行，不写入台账或报告、不打包更新、不发布 PR，也不证明完整扫描已经通过。
+定时扫描覆盖当前 Decision Index、其动态与链接材料、`site/papers.json` 精选论文目录中的 arXiv 原始来源、已有来源、一层依赖链接和已配置的学术查询；不设新增候选数量上限，但不代表扫描整个互联网。手动运行可选择全部候选或 100／300 项上限。`smoke` 只进行小规模公开网络试运行，不写入台账或报告、不打包更新、不发布 PR，也不证明完整扫描已经通过。
+
+精选目录只提供发现入口，不直接提供证据等级或正文哈希。扫描前先完整检查本地目录格式与 arXiv URL，按论文身份去重，并在抓取前应用排除规则；格式有误即停止，不把任意地址送入网络请求。实际页面筛查仍不等于阅读全文或编辑审阅。报告的 `error_code_counts` 统计全部问题，`errors` 最多保存 100 个示例，并用总数、示例数及截断标记明确区分；仅记录白名单中的固定错误码，不发布任意异常消息或响应正文。
+
+两份台账共享规范论文身份，但实际抓取保留精选链接中的固定版本。已在研究台账中的论文不会因生态或学术发现路径再次出现而重复报新增；已有历史重复行不静默删除。固定版本的原始摘要保留原证据、日期和摘要检查等级，同时观察当前公开版本；新版本或摘要变化进入待审记录，不直接混入旧版本字段。即使摘要未变，新版本也可进入待审；重复观察不重写待审时间，抓取失败不清除未解决记录。为兼容现有流程，这些条目沿用 `editorial_refresh_candidates` 字段，但不代表授予编辑审阅等级。
 
 扫描 job 只读且不接收发布 token。独立发布 job 先检查允许更新的文件，再仅在最后发布步骤注入 token。远程网页、README 和模型卡中的内容一律作为不可信数据处理，不执行其代码或指令，不使用其推荐安装命令；仅请求公开来源，拒绝携带凭据的 URL 与私有网络地址。
 
@@ -147,7 +161,7 @@ Preserve the individual licenses of third-party resources. A repository license 
 
 手动运行：**Actions → Scan public sources → Run workflow**，选择 `main`。GitHub 定时运行可能延迟，公开仓库长期无活动时也可能停用；以 Actions 状态和运行摘要为准。扫描成功不等于 PR 已合并或网站已发布。
 
-**2026-10-16 运行核查：**[完整手动扫描及发布流程](https://github.com/reacher-z/Awesome-Jev/actions/runs/38848656459)已成功。临时只读的五分钟 UTC 探针在 **06:50:35–07:05:33 UTC** 观察窗口内没有产生 `event=schedule` 运行，覆盖 06:55、07:00 和 07:05 三次机会；观察结束后已移除探针。每日两次配置仍保留，但尚未实证自动定时触发，缺失事件的原因未确认。
+**2026-10-16 运行核查：**[完整手动扫描及发布流程](https://github.com/reacher-z/Awesome-Jev/actions/runs/38848656459)已成功。临时只读的五分钟 UTC 探针在 **06:50:35–07:05:33 UTC** 窗口内没有产生定时运行，随后已移除。之后的[真实定时运行](https://github.com/reacher-z/Awesome-Jev/actions/runs/38877935151)于 **09:04:22 UTC** 记录为 `event=schedule`，成功完成并创建 [PR #3](https://github.com/reacher-z/Awesome-Jev/pull/3)；来源抓取报告为部分成功，共 103 个问题，工作流成功不代表全部来源均已抓取。自动触发现已有实证，但尚不能据此确认每日按配置时间准点运行，也不能解释此前缺失事件的原因。
 
 由 `GITHUB_TOKEN` 创建或更新的 PR，其 CI 可能处于等待批准状态；有写权限的维护者可在 PR 上选择 **Approve workflows to run**。扫描本身会在发布 PR 之前校验，但不能因此假定 PR 已取得全部独立检查结果。
 
@@ -160,3 +174,24 @@ Preserve the individual licenses of third-party resources. A repository license 
 自动正文筛查、摘要检查、编辑复核和亲自复现是不同层级。PR 自动评论不等于学术审查，也不批准合并。CI 在两个仓库运行，Pages 部署 job 仅允许组织部署仓库执行、只发布 `site/`；完成后检查两边 Actions 与线上双语页面。
 
 只使用公开来源，不提交密钥、私人对话、个人路径或原始缓存。保留第三方字体、图标、模型与数据的许可边界，不将商业受限资源描述为可任意使用的开源资源。
+
+
+## Reviewed resource expansion
+
+The [expansion directory](expansion-2026-10-16.md) and its [frozen baseline](../data/expansion-baseline-2026-10-16.json) distinguish new resources from previously known URLs and evidence. Only accepted URLs listed in the [reviewed intake](../data/expansion-intake-2026-10-16.json) may count toward the expansion target; ordinary scan discoveries do not automatically enter this audited count.
+
+For a reviewed expansion release, update the ledgers and accepted intake, then run:
+
+```sh
+python3 scripts/build_source_index.py
+python3 scripts/build_expansion_report.py
+node scripts/build_site.mjs
+python3 scripts/validate.py
+python3 -m unittest discover -s tests
+```
+
+The generated discoveries pages are snapshots of the reviewed intake, separate from the live searchable corpus. The recurring scanner retains its existing data-only PR boundary and does not silently rewrite the expansion report or directory. Continue to inspect proposed resources, verification scope, duplicates, and any licensed or experimental limitations before publication.
+
+The Chinese directory uses [discovery-translations.zh-CN.json](../data/discovery-translations.zh-CN.json) for its resource descriptions. Each translation is keyed by the exact reviewed English description, so a changed qualification cannot silently retain an older translation. Add or review the Chinese wording whenever an accepted description changes, preserving private-data, label-provenance, license and reproduction limits. The build stops if a current description lacks Chinese text. Original source titles and links remain unchanged; translating a summary does not add another source or upgrade its evidence tier.
+
+中文资源简介保存在独立翻译文件中，以完整英文简介对应。新增或修改来源简介时同步校对译文，保留数据私有性、标签来源、许可和复现限制；缺少对应中文时，构建会停止。翻译不改变来源数量、原始标题、链接或证据等级。

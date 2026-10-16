@@ -1,21 +1,29 @@
 """Offline crawlability, bilingual identity, and visible structured-data checks."""
 
 from datetime import date
+from collections import Counter
 from html.parser import HTMLParser
+import hashlib
 import json
 from pathlib import Path
 import re
 import shutil
 import subprocess
+import tempfile
 import unittest
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urljoin, urlsplit
 from urllib.robotparser import RobotFileParser
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "https://awesomejev.github.io"
-ROUTES = ("/", "/zh/", "/guide/", "/zh/guide/", "/papers/", "/zh/papers/")
-PAIRS = (("/", "/zh/"), ("/guide/", "/zh/guide/"), ("/papers/", "/zh/papers/"))
+ROUTES = ("/", "/zh/", "/guide/", "/zh/guide/", "/papers/", "/zh/papers/", "/discoveries/", "/zh/discoveries/")
+PAIRS = (("/", "/zh/"), ("/guide/", "/zh/guide/"), ("/papers/", "/zh/papers/"), ("/discoveries/", "/zh/discoveries/"))
+BUILD_INPUTS = (
+    "scripts/build_site.mjs", "templates/index.html", "data/search-guide.json",
+    "data/expansion-progress-2026-10-16.json", "data/discovery-translations.zh-CN.json", "references.bib",
+    "site/app.js", "site/catalog.mjs", "site/resource-view.mjs", "site/styles.css",
+)
 
 
 def words(value):
@@ -48,6 +56,9 @@ class CrawlPage(HTMLParser):
         self.cards = []
         self.headings = []
         self.structured = []
+        self.import_maps = []
+        self.scripts = []
+        self.stylesheets = []
         self.body_text = []
         self.ids = []
         self.links = []
@@ -57,6 +68,7 @@ class CrawlPage(HTMLParser):
         self._h1 = None
         self._card = None
         self._card_title = False
+        self._card_description = False
         self._style = False
         self.feed(source)
 
@@ -77,26 +89,35 @@ class CrawlPage(HTMLParser):
                 self.canonicals.append(attrs.get("href", ""))
             if "alternate" in relation and "hreflang" in attrs:
                 self.alternates.append((attrs["hreflang"], attrs.get("href", "")))
+            if "stylesheet" in relation:
+                self.stylesheets.append(attrs.get("href", ""))
         elif tag == "meta" and attrs.get("name", "").lower() in {"robots", "googlebot", "bingbot"}:
             self.robots.append(attrs.get("content", ""))
         elif tag == "script":
             self._script = attrs.get("type", "other")
             self._script_text = []
+            self.scripts.append(attrs)
         elif tag == "style":
             self._style = True
         elif tag == "h1":
             self._h1 = []
         elif tag == "article" and "resource-row" in classes:
-            self._card = {"url": "", "name": [], "hidden": "hidden" in attrs or attrs.get("aria-hidden") == "true"}
+            self._card = {"url": "", "name": [], "text": [], "description": [], "hidden": "hidden" in attrs or attrs.get("aria-hidden") == "true",
+                          "category": attrs.get("data-category", ""), "relation": attrs.get("data-relation", ""),
+                          "verification_level": attrs.get("data-verification-level", "")}
         elif tag == "h3" and self._card is not None:
             self._card_title = True
         elif tag == "a" and self._card is not None and self._card_title:
             self._card["url"] = attrs.get("href", "")
+        elif tag == "p" and self._card is not None and "resource-description" in classes:
+            self._card_description = True
 
     def handle_endtag(self, tag):
         if tag == "script":
             if self._script == "application/ld+json":
                 self.structured.append(json.loads("".join(self._script_text)))
+            elif self._script == "importmap":
+                self.import_maps.append(json.loads("".join(self._script_text)))
             self._script = None
         elif tag == "style":
             self._style = False
@@ -107,8 +128,12 @@ class CrawlPage(HTMLParser):
             self._h1 = None
         elif tag == "h3":
             self._card_title = False
+        elif tag == "p":
+            self._card_description = False
         elif tag == "article" and self._card is not None:
             self._card["name"] = words("".join(self._card["name"]))
+            self._card["text"] = words(" ".join(self._card["text"]))
+            self._card["description"] = words("".join(self._card["description"]))
             self.cards.append(self._card)
             self._card = None
 
@@ -124,6 +149,10 @@ class CrawlPage(HTMLParser):
             self._h1.append(value)
         if self._card is not None and self._card_title:
             self._card["name"].append(value)
+        if self._card is not None:
+            self._card["text"].append(value)
+            if self._card_description:
+                self._card["description"].append(value)
 
 
 class SiteDiscoveryTests(unittest.TestCase):
@@ -144,6 +173,105 @@ class SiteDiscoveryTests(unittest.TestCase):
                 self.assertEqual(len({card["url"] for card in cards}), len(cards))
         self.assertEqual([c["url"] for c in self.pages["/"].cards], [c["url"] for c in self.pages["/zh/"].cards])
 
+    def test_home_module_graph_and_styles_resolve_to_current_file_bytes(self):
+        imports_pattern = re.compile(
+            r"^\s*(?:import\s+(?:[^;\n]*?\bfrom\s+)?|export\s+[^;\n]*?\bfrom\s+)[\"']([^\"']+)[\"']",
+            re.MULTILINE,
+        )
+
+        def check_version(url):
+            parsed = urlsplit(url)
+            self.assertEqual(parsed.netloc, urlsplit(BASE).netloc)
+            path = (ROOT / "site" / parsed.path.lstrip("/")).resolve()
+            self.assertTrue(path.is_relative_to(ROOT / "site"))
+            expected = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+            self.assertEqual(parse_qs(parsed.query), {"v": [expected]})
+            return path
+
+        for route in ("/", "/zh/"):
+            with self.subTest(route=route):
+                page = self.pages[route]
+                self.assertEqual(len(page.import_maps), 1)
+                module_positions = [i for i, script in enumerate(page.scripts) if script.get("type") == "module"]
+                map_positions = [i for i, script in enumerate(page.scripts) if script.get("type") == "importmap"]
+                self.assertEqual(len(module_positions), 1)
+                self.assertLess(map_positions[0], module_positions[0], "Map must precede module resolution")
+                entry = urljoin(BASE + route, page.scripts[module_positions[0]]["src"])
+                self.assertEqual(urlsplit(entry).path, "/app.js")
+                mappings = {urljoin(BASE + route, key): urljoin(BASE + route, value)
+                            for key, value in page.import_maps[0]["imports"].items()}
+                queue, visited, mapped = [entry], set(), set()
+                while queue:
+                    module_url = queue.pop()
+                    if module_url in visited:
+                        continue
+                    visited.add(module_url)
+                    path = check_version(module_url)
+                    for specifier in imports_pattern.findall(path.read_text()):
+                        dependency = urljoin(module_url, specifier)
+                        self.assertIn(dependency, mappings, "Every imported module needs a versioned resolution")
+                        mapped.add(dependency)
+                        queue.append(mappings[dependency])
+                self.assertEqual(mapped, set(mappings))
+
+        for route, page in self.pages.items():
+            with self.subTest(stylesheet_route=route):
+                self.assertEqual(len(page.stylesheets), 1)
+                check_version(urljoin(BASE + route, page.stylesheets[0]))
+
+    def test_catalog_update_changes_static_content_and_module_url_without_manual_version_bump(self):
+        node = shutil.which("node")
+        self.assertIsNotNone(node)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in BUILD_INPUTS:
+                destination = root / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, destination)
+
+            def build(*args):
+                result = subprocess.run([node, "scripts/build_site.mjs", *args], cwd=root,
+                                        capture_output=True, text=True, timeout=45)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+            def home():
+                return CrawlPage((root / "site/index.html").read_text())
+
+            build()
+            before = home()
+            published = {p.relative_to(root): p.read_bytes() for p in (root / "site").rglob("*") if p.is_file()}
+            build()
+            self.assertEqual(published, {p.relative_to(root): p.read_bytes() for p in (root / "site").rglob("*") if p.is_file()})
+            build("--check")
+
+            catalog = root / "site/catalog.mjs"
+            probe = {"category": "Guides", "title": "Cache coherency probe", "url": "https://example.org/cache-probe",
+                     "by": "Test fixture", "en": "A newly published resource.", "zh": "新发布的资源。"}
+            catalog.write_text(catalog.read_text() + "\nresources.push(" + json.dumps(probe) + ");\n")
+            stale = subprocess.run([node, "scripts/build_site.mjs", "--check"], cwd=root,
+                                   capture_output=True, text=True, timeout=45)
+            self.assertNotEqual(stale.returncode, 0, "A changed catalog must invalidate the generated pages")
+            build()
+            after = home()
+            self.assertIn(probe["url"], [card["url"] for card in after.cards])
+            self.assertEqual(len(after.cards), len(before.cards) + 1)
+            self.assertNotEqual(before.import_maps[0]["imports"]["/catalog.mjs"], after.import_maps[0]["imports"]["/catalog.mjs"])
+            self.assertEqual(before.import_maps[0]["imports"]["/resource-view.mjs"], after.import_maps[0]["imports"]["/resource-view.mjs"])
+            before_entry = next(s["src"] for s in before.scripts if s.get("type") == "module")
+            after_entry = next(s["src"] for s in after.scripts if s.get("type") == "module")
+            self.assertEqual(before_entry, after_entry, "Unchanged application bytes should retain their cache URL")
+            build("--check")
+
+            for filename in ("app.js", "resource-view.mjs", "styles.css"):
+                path = root / "site" / filename
+                path.write_text(path.read_text() + "\n/* Cache invalidation fixture. */\n")
+            build()
+            changed = home()
+            self.assertNotEqual(after_entry, next(s["src"] for s in changed.scripts if s.get("type") == "module"))
+            self.assertNotEqual(after.import_maps[0]["imports"]["/resource-view.mjs"], changed.import_maps[0]["imports"]["/resource-view.mjs"])
+            self.assertNotEqual(after.stylesheets, changed.stylesheets)
+            build("--check")
+
     def test_each_language_page_has_a_distinct_self_canonical_and_reciprocal_alternates(self):
         observed = []
         for english, chinese in PAIRS:
@@ -163,7 +291,7 @@ class SiteDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(set(observed)), len(ROUTES))
 
     def test_chinese_routes_contain_translated_body_text_before_scripts_run(self):
-        for route in ("/zh/", "/zh/guide/", "/zh/papers/"):
+        for route in ("/zh/", "/zh/guide/", "/zh/papers/", "/zh/discoveries/"):
             with self.subTest(route=route):
                 self.assertGreater(len(re.findall(r"[\u4e00-\u9fff]", "".join(self.pages[route].body_text))), 30)
 
@@ -176,10 +304,11 @@ class SiteDiscoveryTests(unittest.TestCase):
                 self.assertEqual(len(ids), len(set(ids)), "Generated HTML must not duplicate interaction IDs")
 
     def test_item_lists_match_visible_link_titles_order_and_counts(self):
-        for route in ("/", "/zh/", "/papers/", "/zh/papers/"):
+        for route in ("/", "/zh/", "/papers/", "/zh/papers/", "/discoveries/", "/zh/discoveries/"):
             with self.subTest(route=route):
                 page = self.pages[route]
-                self.assertGreaterEqual(len(page.cards), 20)
+                if "discoveries" not in route:
+                    self.assertGreaterEqual(len(page.cards), 20)
                 item_lists = [item for block in page.structured for item in objects(block) if has_type(item, "ItemList")]
                 self.assertEqual(len(item_lists), 1)
                 listing = item_lists[0]
@@ -191,6 +320,73 @@ class SiteDiscoveryTests(unittest.TestCase):
                     self.assertEqual(item["position"], number)
                     self.assertEqual(item["url"], card["url"])
                     self.assertEqual(words(item["name"]), card["name"])
+
+    def test_new_source_directory_preserves_every_accepted_resource_and_evidence_label(self):
+        report = json.loads((ROOT / "data/expansion-progress-2026-10-16.json").read_text())
+        translations = json.loads((ROOT / "data/discovery-translations.zh-CN.json").read_text())["translations"]
+        sources = {row["url"]: row for row in report["additions"]}
+        self.assertEqual(len(sources), report["accepted_new_sources"])
+        labels = {
+            "en": {"direct": "Directly related", "adjacent": "Related field", "background": "Research background",
+                   "editorial_reviewed": "Editorially reviewed", "content_screened": "Content screened", "abstract_checked": "Abstract checked"},
+            "zh": {"direct": "直接相关", "adjacent": "邻近领域", "background": "研究背景",
+                   "editorial_reviewed": "编辑复核", "content_screened": "正文筛查", "abstract_checked": "摘要检查"},
+        }
+        for route, language in (("/discoveries/", "en"), ("/zh/discoveries/", "zh")):
+            with self.subTest(route=route):
+                page = self.pages[route]
+                self.assertEqual(len(page.cards), len(sources))
+                self.assertEqual({card["url"] for card in page.cards}, set(sources))
+                self.assertEqual(Counter(card["category"] for card in page.cards), report["by_category"])
+                self.assertIn("/data/expansion-progress.json", page.links)
+                for card in page.cards:
+                    source = sources[card["url"]]
+                    self.assertFalse(card["hidden"])
+                    self.assertEqual(card["name"], words(source["title"]))
+                    description = source["description"] if language == "en" else translations[source["description"]]
+                    self.assertEqual(words(description), card["description"])
+                    if language == "zh":
+                        self.assertRegex(description, r"[\u3400-\u9fff]", "Every Chinese directory entry needs a translated description")
+                        self.assertNotEqual(words(source["description"]), card["description"])
+                    self.assertEqual(card["relation"], source["relation"])
+                    self.assertEqual(card["verification_level"], source["verification_level"])
+                    self.assertIn(labels[language][source["relation"]], card["text"])
+                    self.assertIn(labels[language][source["verification_level"]], card["text"])
+        self.assertEqual([card["url"] for card in self.pages["/discoveries/"].cards], [card["url"] for card in self.pages["/zh/discoveries/"].cards])
+
+    def test_changed_or_missing_source_translation_stops_build_before_publication(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in BUILD_INPUTS:
+                destination = root / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, destination)
+            path = root / "data/expansion-progress-2026-10-16.json"
+            report = json.loads(path.read_text())
+            # A newly discovered material limitation must not keep an old translation.
+            report["additions"][0]["description"] += " A newly reported reproduction limit."
+            path.write_text(json.dumps(report))
+            result = subprocess.run([shutil.which("node"), "scripts/build_site.mjs"], cwd=root,
+                                    capture_output=True, text=True, timeout=45)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Missing Chinese discovery description translation", result.stderr)
+            self.assertFalse((root / "site/zh/discoveries/index.html").exists())
+
+            localization_path = root / "data/discovery-translations.zh-CN.json"
+            localization = json.loads(localization_path.read_text())
+            localization["translations"][report["additions"][0]["description"]] = "翻译后的新条目，并保留新增的复现限制。"
+            localization_path.write_text(json.dumps(localization))
+            result = subprocess.run([shutil.which("node"), "scripts/build_site.mjs"], cwd=root,
+                                    capture_output=True, text=True, timeout=45)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("翻译后的新条目，并保留新增的复现限制。", (root / "site/zh/discoveries/index.html").read_text())
+
+    def test_homepages_link_localized_discoveries_and_download_matches_source_report(self):
+        self.assertIn("/discoveries/", self.pages["/"].links)
+        self.assertIn("/zh/discoveries/", self.pages["/zh/"].links)
+        original = json.loads((ROOT / "data/expansion-progress-2026-10-16.json").read_text())
+        published = json.loads((ROOT / "site/data/expansion-progress.json").read_text())
+        self.assertEqual(published, original)
 
     def test_guide_article_headline_matches_visible_page_heading(self):
         for route in ("/guide/", "/zh/guide/"):
@@ -215,7 +411,7 @@ class SiteDiscoveryTests(unittest.TestCase):
                     self.assertFalse(any(set(re.split(r"[,\s]+", value.lower())) & {"noindex", "none"} for value in page.robots))
         self.assertIn(BASE + "/sitemap.xml", rules.site_maps() or [])
 
-    def test_sitemap_lists_all_six_canonical_pages(self):
+    def test_sitemap_lists_all_canonical_pages(self):
         tree = ET.fromstring((ROOT / "site/sitemap.xml").read_bytes())
         ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
         locations = [node.text for node in tree.findall("sm:url/sm:loc", ns)]

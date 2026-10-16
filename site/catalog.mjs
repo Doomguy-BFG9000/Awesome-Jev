@@ -73,6 +73,8 @@ const translations = {
     preprint: "Preprint · author-reported",
     background: "Background literature",
     community: "Community resource",
+    independent: "Independent evaluation",
+    reportedEvaluation: "Author-reported evaluation",
     modelcard: "Publisher model card",
     readFurther: "Project links",
     readmeLink: "README",
@@ -118,8 +120,11 @@ const translations = {
     corpusSearch: "Search the research corpus",
     corpusPlaceholder: "Search titles, topics, or sources…",
     corpusLoading: "Loading the source index…",
-    corpusUnavailable:
-      "The corpus is being assembled. Explore the curated collection above in the meantime.",
+    corpusLoadFailed: "The source index could not be loaded. Retry or open the source files below.",
+    corpusRetry: "Retry loading",
+    corpusJSON: "Open source index (JSON)",
+    corpusLedger: "Browse source ledgers",
+    corpusUnavailable: "The source index contains no available entries.",
     corpusEmpty: "No sources match this search.",
     corpusMore: "Show more sources",
     corpusCount: (n) => `${n.toLocaleString("en-US")} indexed sources`,
@@ -200,6 +205,8 @@ const translations = {
     preprint: "预印本 · 作者报告",
     background: "背景文献",
     community: "社区资源",
+    independent: "独立评测",
+    reportedEvaluation: "作者报告的评测",
     modelcard: "发布者模型卡",
     readFurther: "项目链接",
     readmeLink: "项目说明",
@@ -242,7 +249,11 @@ const translations = {
     corpusSearch: "搜索研究来源库",
     corpusPlaceholder: "搜索标题、主题或来源…",
     corpusLoading: "正在加载来源索引…",
-    corpusUnavailable: "研究来源库正在整理中，可先浏览上方精选资源。",
+    corpusLoadFailed: "来源索引加载失败。请重试，或打开下方原始文件。",
+    corpusRetry: "重新加载",
+    corpusJSON: "打开来源索引（JSON）",
+    corpusLedger: "浏览来源记录",
+    corpusUnavailable: "来源索引中暂无可用条目。",
     corpusEmpty: "没有匹配的来源。",
     corpusMore: "显示更多来源",
     corpusCount: (n) => `${n.toLocaleString("zh-CN")} 项索引来源`,
@@ -255,6 +266,330 @@ const translations = {
 
 // Descriptions are editorial summaries. Paper findings remain author-reported.
 const resources = [
+  {
+    "category": "Papers",
+    "title": "Benchmarking System One decision models against trained classifiers and language models for automated decision gates",
+    "by": "Rafe & Das · 2026-10-06 · v2",
+    "date": "2026-10-06",
+    "first_submitted": "2026-09-29",
+    "url": "https://arxiv.org/abs/2610.00346v2",
+    "en": "A common-request harness compares typed decision models, generative readouts and trained classifiers; accuracy, selective coverage and out-of-scope acceptance depend on label access and task.",
+    "zh": "用共同请求框架比较类型化决策模型、生成模型读出与训练分类器；准确率、选择性覆盖率和域外接纳取决于是否有任务标签及具体任务。"
+  },
+  {
+    "category": "Papers",
+    "title": "LLM-as-Jev: LLMs Are Already Jev-Style Decision Models -- When and How to Fine-Tune Them",
+    "by": "Li & Wagle · 2026-10-13 · v3",
+    "date": "2026-10-13",
+    "first_submitted": "2026-10-01",
+    "url": "https://arxiv.org/abs/2610.02076v3",
+    "en": "Compares frozen Qwen decision readouts with optional KL-anchored fine-tuning and budgeted reasoning; reported gains depend on backbone size and routing workload, not disclosure of hosted Jev internals.",
+    "zh": "比较冻结 Qwen 的决策读出、带 KL 锚定的可选微调与限预算推理；所报收益依赖骨干规模和路由任务，并不揭示托管 Jev 内部实现。"
+  },
+  {
+    "category": "Papers",
+    "title": "HakemBench: A Turkish Benchmark of Typed Decisions",
+    "by": "Teke · 2026-10-01 · v1",
+    "date": "2026-10-01",
+    "first_submitted": "2026-10-01",
+    "url": "https://arxiv.org/abs/2610.02293v1",
+    "en": "Turkish typed-decision evaluation reports decision quality, Brier-based probability quality and risk–coverage alongside input probes; most labels are AI-derived, and the lab’s model used feedback from earlier test results.",
+    "zh": "土耳其语类型化决策评测同时报告决策质量、基于 Brier 的概率质量、风险—覆盖及输入探查；多数标签由 AI 产生，实验室自身模型还使用过先前测试结果的反馈。"
+  },
+  {
+    "category": "Models",
+    "title": "ufakzeka-karar",
+    "by": "ufak AI · Apache-2.0",
+    "provenance": "modelcard",
+    "url": "https://huggingface.co/ufakai/ufakzeka-karar",
+    "en": "Turkish typed-decision checkpoint with shipped temperature scaling. Its card flags test-informed training and worsening support-task calibration; benchmark results are not blind.",
+    "zh": "土耳其语类型化决策检查点，附温度缩放参数；模型卡标注训练参考了测试结果，并报告客服任务的校准恶化，基准结果并非盲测。"
+  },
+  {
+    "category": "Papers",
+    "title": "Just Ask Jev: Reinforcement Learning for Calibrated Decisions as a Zero-Shot Detector of AI Alignment Failures",
+    "by": "Guo et al. · 2026-09-24 · v1",
+    "date": "2026-09-24",
+    "first_submitted": "2026-09-24",
+    "url": "https://arxiv.org/abs/2609.29429v1",
+    "en": "Benchmarks Jev alignment-failure detection while separating question wording from input context; benchmark-scorer labels dominate, and context gains often depend on fields encoding the label.",
+    "zh": "评测 Jev 对 AI 对齐失效的检测，分别改变提问与输入上下文；参考标签主要来自基准评分器，上下文收益常依赖编码标签的字段。"
+  },
+  {
+    "category": "Evaluations",
+    "title": "JevAdvBench analysis and evaluation code",
+    "by": "MIT code · CC BY-NC 4.0 data",
+    "url": "https://github.com/JevAdvBench/JevAdvBench",
+    "en": "Recorded-response analysis and new API evaluations use identical-input reruns as a control. Most labels are model-derived; this project has not executed the analyses.",
+    "zh": "提供已记录响应分析与新的 API 评测，以相同输入重跑作为对照。多数标签来自模型；本项目未运行这些分析。"
+  },
+  {
+    "category": "Models",
+    "title": "Jeva-4B",
+    "by": "Jeva authors · license not declared",
+    "provenance": "modelcard",
+    "url": "https://huggingface.co/LIQIIIII/Jeva-4B",
+    "en": "Author checkpoint with backbone, adapter and decision-head files. The inspected card declares no model license; weights have not been loaded or tested by this project.",
+    "zh": "作者发布的检查点包，含骨干、适配器和决策头文件；所查模型卡未声明模型许可，本项目未加载或测试权重。"
+  },
+  {
+    "category": "Evaluations",
+    "title": "Reading Right, Acting Wrong — diagnostic dashboard",
+    "by": "Li, Krishnan & Padman · author report",
+    "url": "https://yubol-bobo.github.io/System_one_model_evaluation/",
+    "en": "Interactive factual-probe and action-decision diagnostics. The current report covers 22 systems, distinct from the fixed paper’s 18; it is not a verified code or data release.",
+    "zh": "交互式事实探查与动作决策诊断；当前报告覆盖22个系统，与固定论文的18个不同，不是经过核验的代码或数据发布。"
+  },
+  {
+    "category": "Papers",
+    "title": "Can Jev Judge Radiology Reports? Evaluating a System One Model for Clinical Factuality",
+    "by": "Huang et al. · 2026-09-23 · v1",
+    "date": "2026-09-23",
+    "first_submitted": "2026-09-23",
+    "url": "https://arxiv.org/abs/2609.27607v1",
+    "en": "Jev checks support between generated and reference radiology reports in both directions; expert agreement depends on report size and error definitions and does not establish prospective clinical effectiveness.",
+    "zh": "Jev 双向检查生成与参考放射学报告之间的陈述支持关系；与专家的一致性受报告长度和错误定义影响，并不证明前瞻性临床效果。"
+  },
+  {
+    "category": "Papers",
+    "title": "More Choices, Fewer Decisions: Ordinal-Scale Bias in JEV-like Direct-Decision Models",
+    "by": "Gao et al. · 2026-10-14 · v2",
+    "date": "2026-10-14",
+    "first_submitted": "2026-09-30",
+    "url": "https://arxiv.org/abs/2609.38827v2",
+    "en": "Audits ordinal label underuse across selected decision models; finer scales increase compression, while accuracy, final-label utilization and averaged candidate probabilities remain distinct measures.",
+    "zh": "审查所选决策模型对有序标签的使用不足；细化量表会加重压缩，准确率、最终标签利用率和平均候选概率仍是不同测量。"
+  },
+  {
+    "category": "Papers",
+    "title": "Visual Jev: Accurate and Efficient Decisions from Shared Visual Context",
+    "by": "Yu & Yao · 2026-09-22 · v1",
+    "date": "2026-09-22",
+    "first_submitted": "2026-09-22",
+    "url": "https://arxiv.org/abs/2609.25845v1",
+    "en": "An independent visual decision architecture shares image context across batched questions using an LM-head readout; warm amortized speedups trade higher peak memory, while accuracy gains concentrate on trained task families.",
+    "zh": "独立的视觉决策架构以语言模型头读出，让批处理问题共享图像上下文；预热后的摊销加速伴随更高峰值内存，准确率收益集中于训练覆盖的任务家族。"
+  },
+  {
+    "category": "Papers",
+    "title": "Decision Hijacking: Prompt Injection Attacks on Jev's Typed Probabilistic Decisions",
+    "by": "Wu & Lim · 2026-09-23 · v1",
+    "date": "2026-09-23",
+    "url": "https://arxiv.org/abs/2609.28613v1",
+    "en": "Audits Jev injection on reconstructed InjecAgent cases, separating probability shifts from attacker-target selections; optimization results are checked on fresh calls, within this benchmark setting.",
+    "zh": "在重构的 InjecAgent 案例中审查 Jev 提示注入，区分概率偏移与攻击目标选择；优化结果通过新调用验证，结论限于该基准设置。"
+  },
+  {
+    "category": "Papers",
+    "title": "JevOut: Natural Context Can Flip Decision Models",
+    "by": "Xu et al. · 2026-10-08 · v2",
+    "date": "2026-10-08",
+    "url": "https://arxiv.org/abs/2609.30243v2",
+    "en": "Optimizes context additions around unchanged questions and options in four decision systems; results concern initially correct decisions, and human validity checks cover a sampled subset of successful attacks.",
+    "zh": "在四种决策系统中围绕不变的题目和选项优化上下文补充；结果针对原本答对的决策，人工有效性检查仅覆盖成功攻击的抽样子集。"
+  },
+  {
+    "category": "Papers",
+    "title": "JEV as a Judge for Agent Trace Security: An Empirical Comparison with Generative LLM Judges",
+    "by": "Wang & Gao · 2026-09-28 · v1",
+    "date": "2026-09-28",
+    "url": "https://arxiv.org/abs/2609.34862v1",
+    "en": "Compares Jev and generative judges on retrospective agent-trace risk classification; dataset rankings vary, and successful-call latency and valid-judgment cost must be read with coverage.",
+    "zh": "比较 Jev 与生成式评判模型对历史 agent 轨迹的风险分类；排名因数据集而异，成功调用耗时和有效判断成本需结合覆盖率解读。"
+  },
+  {
+    "category": "Papers",
+    "title": "Evaluating Decision Models for Text Annotation in Computational Social Science",
+    "by": "Ibrahim & Zaki · 2026-09-23 · v2",
+    "date": "2026-09-23",
+    "url": "https://arxiv.org/abs/2609.24574v2",
+    "en": "Evaluates zero-shot social-science annotation and confidence-routed LLM cascades; lower costs coexist with task-dependent errors and overconfidence, so confidence cannot substitute for label validation.",
+    "zh": "评估零样本社会科学标注与按置信度分流的 LLM 级联；低成本仍伴随任务相关误差和过度自信，置信度不能替代标签验证。"
+  },
+  {
+    "category": "Papers",
+    "title": "Jev for Scientific Decisions: Evaluating Semantic Choices and Their Consequences",
+    "by": "Deng, Fan, Zhang & Xie · 2026-10-15 · v3",
+    "date": "2026-10-15",
+    "first_submitted": "2026-09-21",
+    "url": "https://arxiv.org/abs/2609.24965v3",
+    "en": "In ten prepared scientific cases, the authors separate semantic selections, computed quantities and final labels; comparison-model errors can be hidden by unchanged final labels.",
+    "zh": "作者在十个预设科学案例中分别评估语义选择、计算得到的数值与最终标签；对比模型的错误可能被不变的最终标签掩盖。"
+  },
+  {
+    "category": "Papers",
+    "title": "Same Scores, Different Decisions: Evaluating JEV and Language Models for Legal Document Understanding",
+    "by": "Zhang et al. · 2026-10-10 · v2",
+    "date": "2026-10-10",
+    "first_submitted": "2026-09-23",
+    "url": "https://arxiv.org/abs/2609.27678v2",
+    "en": "ContractNLI request variations can change which answers are wrong while aggregate accuracy stays unchanged; stable answers may preserve errors. This benchmark does not validate real legal deployment.",
+    "zh": "ContractNLI 请求变化可能改变具体错误答案，而总体准确率保持不变；稳定答案也可能保留错误。该基准不能验证真实法律场景的部署有效性。"
+  },
+  {
+    "category": "Papers",
+    "title": "Jev in Medicine: A Benchmark Evaluation",
+    "by": "Madrid-García & Merino-Barbancho · 2026-10-10 · v4",
+    "date": "2026-10-10",
+    "first_submitted": "2026-09-27",
+    "url": "https://arxiv.org/abs/2609.34024v4",
+    "en": "Preliminary medical-benchmark evaluation of Jev 1.13 reports task-dependent accuracy, calibration and weak unanswerable-question detection; it does not establish clinical deployment validity.",
+    "zh": "Jev 1.13 的初步医学基准评测报告了随任务变化的准确率、校准表现及较弱的不可回答问题识别能力；这不能证明临床部署有效性。"
+  },
+  {
+    "category": "Papers",
+    "title": "KITE: Scaling Jev Population Experiments with Sparse Flagship Calibration",
+    "by": "Li · 2026-09-23 · v1",
+    "date": "2026-09-23",
+    "first_submitted": "2026-09-23",
+    "url": "https://arxiv.org/abs/2609.27535v1",
+    "en": "Jev state tables and sparse flagship-model anchors support population simulations with shared human–model discrepancy estimates; larger simulations do not add human evidence or establish prospective intervention effects.",
+    "zh": "Jev 状态表与少量强模型锚点支持纳入共享人—模型差异估计的群体模拟；扩大模拟规模不会增加人类证据，也不能确立前瞻性干预效果。"
+  },
+  {
+    "category": "Papers",
+    "title": "Beyond Answer Confidence: A Controlled Audit of Self-Knowledge in a Black-Box Decision Model",
+    "by": "Shankaranarayana, Runje & Jannink · 2026-10-01 · v1",
+    "date": "2026-10-01",
+    "url": "https://arxiv.org/abs/2610.01006v1",
+    "en": "Controls information and surface cues to distinguish Jev answer confidence from self-knowledge; black-box behavior does not establish access to an internal knowledge state.",
+    "zh": "通过控制信息与表面线索，区分 Jev 的答案置信度与是否知道答案的自评；黑盒表现并不证明能读取内部知识状态。"
+  },
+  {
+    "category": "Papers",
+    "title": "Specialized Decision Models vs. General-Purpose LLMs: Benchmarking Jev Across Knowledge, Reasoning, and Multilingual Tasks",
+    "by": "Li et al. · 2026-10-08 · v1",
+    "date": "2026-10-08",
+    "url": "https://arxiv.org/abs/2610.11978v1",
+    "en": "Knowledge, reasoning and multilingual multiple-choice evaluation of Jev; reported rankings and mathematical weaknesses apply to the selected models and benchmarks.",
+    "zh": "在知识、推理和多语言选择题中评测 Jev；报告的排名及数学弱点仅适用于所选模型与基准。"
+  },
+  {
+    "category": "Papers",
+    "title": "One Word Opens the Gate: The Option-Channel Attack on Typed Decision Models as Agent Guardrails",
+    "by": "Azizi, Baghaei Potraghloo & Pedram · 2026-10-08 · v1",
+    "date": "2026-10-08",
+    "url": "https://arxiv.org/abs/2610.12292v1",
+    "en": "Tests option-channel attacks on seven open-weight models; reversed decisions can remain confident. The reported experiments do not test hosted Jev.",
+    "zh": "测试七个开放权重模型的选项通道攻击；决策翻转后仍可能高置信。报告中的实验未测试托管 Jev。"
+  },
+  {
+    "category": "Papers",
+    "title": "Calibrated to Whom? Persona and Language Effects on Cultural Values in JEV",
+    "by": "Asseri & Asseri · 2026-10-03 · v2",
+    "date": "2026-10-03",
+    "url": "https://arxiv.org/abs/2609.36399v2",
+    "en": "English/Arabic persona-conditioned Jev survey audit; the effects concern simulated respondents in one model, not measurements of real populations.",
+    "zh": "对 Jev 进行英语和阿拉伯语人物设定条件下的问卷审查；观察的是单一模型的模拟受访者，并非对真实人群的测量。"
+  },
+  {
+    "category": "Papers",
+    "title": "Suggested Is Not Superseded: A Pre-Registered Evaluation of a System-One Model as a Memory-Retirement Gate",
+    "by": "Chen & Le · 2026-10-11 · v1",
+    "date": "2026-10-11",
+    "url": "https://arxiv.org/abs/2610.15710v1",
+    "en": "Jev memory-retirement evaluation separates confirmed updates from suggestions; mixed LLM/human labels, shared errors and selection on a small development set constrain cascade claims.",
+    "zh": "Jev 旧记忆停用评测区分已确认更新与变化暗示；LLM／人工混合标注、共享错误及小型开发集上的选择限制了级联收益主张。"
+  },
+  {
+    "category": "Papers",
+    "title": "Judges Follow the Reference: The Derivation Gap in Verifying Tool-Call Arguments",
+    "by": "Ma et al. · 2026-10-13 · v1",
+    "date": "2026-10-13",
+    "url": "https://arxiv.org/abs/2610.18497v1",
+    "en": "Tool-argument judges including Jev reject some correct derived values without visible references; model-generated references are evaluated on three benchmarks.",
+    "zh": "包括 Jev 在内的工具参数评判模型，在缺少可见参考时会拒绝部分正确推导值；模型生成的参考在三个基准上接受评测。"
+  },
+  {
+    "category": "Papers",
+    "title": "Typed Decision Models on Tabular Data",
+    "by": "Zhang, Ye & Zha · 2026-10-14 · v1",
+    "date": "2026-10-14",
+    "url": "https://arxiv.org/abs/2610.19536v1",
+    "en": "Tests classification and verification under content-preserving table rewrites across three task families; confidence can flag instability without proving correctness.",
+    "zh": "在三类表格任务中检验保持内容不变的改写对分类与验证的影响；置信度可提示不稳定，但不证明正确性。"
+  },
+  {
+    "category": "Papers",
+    "title": "Selective Reasoning for Typed Decision Models: When to Start, Read, and Stop",
+    "by": "Zheng & Chen · 2026-10-14 · v1",
+    "date": "2026-10-14",
+    "url": "https://arxiv.org/abs/2610.19644v1",
+    "en": "Gates reasoning start, candidate-answer reading and generation stopping; evidence is limited to a frozen Qwen backbone and three task families.",
+    "zh": "控制推理启动、候选答案读取与生成停止的时机；证据限于冻结的 Qwen 骨干及三类任务。"
+  },
+  {
+    "category": "Papers",
+    "title": "Same-Number Citation Swaps: Stress-Testing Jev as a Financial Evidence Judge",
+    "by": "Xu et al. · 2026-10-06 · v1",
+    "date": "2026-10-06",
+    "url": "https://arxiv.org/abs/2610.08675v1",
+    "en": "Same-number citation swaps probe financial-evidence verification; rejecting wrong roles trades off with accepting equivalent support in a constructed test.",
+    "zh": "以同数值引用替换检验金融证据验证；在构造测试中，识别财务项目错配与接受等价证据之间存在权衡。"
+  },
+  {
+    category: "Papers",
+    title: "REFLEX with Jev for Efficient Selective Control in LLM Agents",
+    by: "Wu & Lim · 2026-09-22 · v1",
+    date: "2026-09-22",
+    url: "https://arxiv.org/abs/2609.26532v1",
+    en: "Confidence-gated Jev control with LLM fallback; gains depend on action alternatives and baseline routing.",
+    zh: "以置信度控制 Jev 与 LLM 回退；收益取决于候选动作与基线路由。",
+  },
+  {
+    category: "Papers",
+    title: "Mnemon: Raw Records, Fast Judgments, Slow Thoughts",
+    by: "Wang · 2026-09-28 · v1",
+    date: "2026-09-28",
+    url: "https://arxiv.org/abs/2609.36059v1",
+    en: "Keeps raw memory records, separating Jev relevance judgments from LLM search planning and answer generation.",
+    zh: "保留原始记忆记录，将 Jev 相关性判断与 LLM 检索规划、回答生成分开。",
+  },
+  {
+    category: "Papers",
+    title: "Bongard: Training Machine Intuition",
+    by: "Ding, Jin & Ji · 2026-09-30 · v1",
+    date: "2026-09-30",
+    url: "https://arxiv.org/abs/2609.39111v1",
+    en: "Shared evidence encoding and candidate-probability readout, trained with representation and action-outcome feedback.",
+    zh: "共享证据编码与候选概率读出，结合表征学习和行动结果反馈训练。",
+  },
+  {
+    category: "Papers",
+    title: "VideoJev: System One Model for Video Understanding and Interaction",
+    by: "Zhu et al. · 2026-10-13 · v1",
+    date: "2026-10-13",
+    url: "https://arxiv.org/abs/2610.18615v1",
+    en: "Structured video decisions with temporal spans and candidate scores; cached and joint inference reuse visual computation.",
+    zh: "以时间区间和候选分数表达视频决策，通过缓存与联合推理复用视觉计算。",
+  },
+  {
+    category: "Papers",
+    title: "Releasing the Inner Jev: A Simple Recipe for Open Decision Models",
+    by: "Geuter, Cheng & Alvarez-Melis · 2026-10-12 · v1",
+    date: "2026-10-12",
+    url: "https://arxiv.org/abs/2610.17205v1",
+    en: "Answer-letter readout and supervised LoRA baselines; evaluation includes model-generated labels.",
+    zh: "答案字母概率读出与监督式 LoRA 基线；评测包含模型生成的标签。",
+  },
+  {
+    category: "Papers",
+    title: "SanSi: A Looped Typed Decision Model for System 1.5 Thinking",
+    by: "Gan, Lee & Kang · 2026-10-10 · v2",
+    date: "2026-10-10",
+    url: "https://arxiv.org/abs/2610.07730v2",
+    en: "Looped hidden-state computation for typed decisions; additional loops trade compute for accuracy.",
+    zh: "通过隐状态循环计算输出类型化决策；额外循环以计算成本换取准确率。",
+  },
+  {
+    category: "Papers",
+    title: "JevCascade: Readout Stability and Inference-Time Compute Allocation for Prefill-Only Decision Models",
+    by: "Li & Chen · 2026-10-10 · v2",
+    date: "2026-10-10",
+    url: "https://arxiv.org/abs/2610.07716v2",
+    en: "Candidate-menu interventions and confidence cascades; ranking stability does not establish probability calibration.",
+    zh: "研究候选集合干预与置信度级联；排序稳定性并不等同概率校准。",
+  },
   {
     category: "Papers",
     title: "JevSpawn: Adaptive Agentic Inference through Compositional Action Spaces",
@@ -809,6 +1144,42 @@ const resources = [
     url: "https://arxiv.org/abs/2312.07104",
     en: "Efficient execution of structured language-model programs.",
     zh: "结构化语言模型程序的高效执行。",
+  },
+  {
+    "category": "Evaluations",
+    "title": "Artificial Analysis Decision Index",
+    "by": "Artificial Analysis · Methodology v1.0",
+    "provenance": "independent",
+    "url": "https://artificialanalysis.ai/evaluations/artificial-analysis-decision-index",
+    "en": "External evaluation of classification, tool calling, knowledge and reasoning. The suite includes private questions.",
+    "zh": "第三方分类、工具调用、知识与推理评测；测试集包含私有问题。"
+  },
+  {
+    "category": "Evaluations",
+    "title": "Entagl: Jev vs Gemini workflow evaluation",
+    "by": "Entagl Research · 2026-09-23",
+    "provenance": "reportedEvaluation",
+    "url": "https://www.entagl.com/blog/typesafe-jev-benchmark-ai-decision-models",
+    "en": "Author-run labeled decisions and workflow replays. Private customer cases limit public reproducibility.",
+    "zh": "作者开展的标注决策与工作流重放评测；私有客户案例限制公开复现。"
+  },
+  {
+    "category": "Guides",
+    "title": "SDE cascade",
+    "by": "TypeSafe · Official cookbook",
+    "provenance": "official",
+    "url": "https://docs.typesafe.ai/cookbooks/sde_cascade",
+    "en": "Check inexpensive extraction with per-field Jev questions before escalation; the walkthrough uses cached and illustrative outputs.",
+    "zh": "先用逐字段 Jev 问题核查低成本抽取，再决定是否升级；教程使用缓存及示意输出。"
+  },
+  {
+    "category": "Guides",
+    "title": "Structure recovery",
+    "by": "TypeSafe · Official cookbook",
+    "provenance": "official",
+    "url": "https://docs.typesafe.ai/cookbooks/autoformat",
+    "en": "Restore Markdown structure through line-continuation and block-type decisions while code retains the original wording.",
+    "zh": "通过续行和块类型判断恢复 Markdown 结构，由代码保留原始措辞。"
   },
 ];
 

@@ -139,6 +139,155 @@
       "note": "The project name is stated in the README overview image and repository context. Automated heading extraction selected code/configuration text; this annotation corrects only the display title and does not validate the reported benchmark results.",
       "evidence_url": "https://github.com/victoryxl/graphdecisionbench",
       "reviewed_at": "2026-10-16T07:06:17Z"
+    },
+    {
+      "url": "https://huggingface.co/datasets/carlosxiang/JEVal",
+      "title": "JEVal",
+      "note": "Title extractor selected a body sentence; frontmatter pretty_name and HTML heading identify JEVal.",
+      "evidence_url": "https://huggingface.co/datasets/carlosxiang/JEVal/raw/main/README.md",
+      "reviewed_at": "2026-10-16T10:14:43+00:00"
+    },
+    {
+      "url": "https://huggingface.co/ibm-granite/granite-20b-functioncalling",
+      "title": "Granite-20B-FunctionCalling",
+      "note": "Title extractor selected a code comment; the primary card heading supplies the model name.",
+      "evidence_url": "https://huggingface.co/ibm-granite/granite-20b-functioncalling/raw/main/README.md",
+      "reviewed_at": "2026-10-16T10:14:43+00:00"
+    },
+    {
+      "url": "https://huggingface.co/spaces/FINAL-Bench/Tetris-JEV-LAYA-ZTC",
+      "title": "ZTC Gate Tetris",
+      "note": "The card explicitly describes simulation driven by measured constants; existing headline overstates the artifact and the current relevance is insufficiently explicit.",
+      "evidence_url": "https://huggingface.co/spaces/FINAL-Bench/Tetris-JEV-LAYA-ZTC/raw/main/README.md",
+      "reviewed_at": "2026-10-16T10:14:43+00:00",
+      "relevance": "Tetris gating simulation driven by publisher-measured judge statistics; not a record of the models actually judging Tetris moves."
+    },
+    {
+      "url": "https://huggingface.co/datasets/m-lagnajit/calibrated-typed-decisions",
+      "relevance": "Typed questions retaining upstream human labels and teacher/rater-derived soft targets, including a documented correction that swaps teacher probabilities on mismatched answers.",
+      "note": "Card v2.1 changes teacher soft-target rankings; publisher terminology \"calibrated\" is not independent proof that the corrected probabilities remain calibrated.",
+      "evidence_url": "https://huggingface.co/datasets/m-lagnajit/calibrated-typed-decisions/raw/main/README.md",
+      "reviewed_at": "2026-10-16T10:14:43+00:00"
+    },
+    {
+      "url": "https://github.com/zephyr4772/laya-zeroshot-agent-guard-eval",
+      "title": "Laya zero-shot agent-step guard evaluation",
+      "relevance": "Small handwritten zero-shot diagnostic of agent-step decisions; reported failures are specific to the tested prompts and model configuration.",
+      "note": "The display title describes the limited diagnostic scope rather than repeating a broad negative headline. This is not an independent model-performance finding.",
+      "evidence_url": "https://raw.githubusercontent.com/zephyr4772/laya-zeroshot-agent-guard-eval/main/README.md",
+      "reviewed_at": "2026-10-16T10:48:06+00:00"
+    },
+    {
+      "url": "https://arxiv.org/abs/2610.18615",
+      "relevance": "Structured video decisions with temporal spans and candidate scores; cached and joint inference reuse visual computation. Results remain author-reported.",
+      "evidence_url": "https://arxiv.org/abs/2610.18615v1",
+      "reviewed_at": "2026-10-16T11:10:02+00:00",
+      "note": "Display-only expansion summary aligned with the existing curated entry and checked against the fixed-version primary abstract. Original ledger evidence and verification tier remain unchanged; no full-paper review or reproduction is claimed."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.39111",
+      "relevance": "Shared evidence encoding and candidate-probability readout, trained with representation and action-outcome feedback. Results remain author-reported.",
+      "evidence_url": "https://arxiv.org/abs/2609.39111v1",
+      "reviewed_at": "2026-10-16T11:10:02+00:00",
+      "note": "Display-only expansion summary aligned with the existing curated entry and checked against the fixed-version primary abstract. Original ledger evidence and verification tier remain unchanged; no full-paper review or reproduction is claimed."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.36059",
+      "relevance": "Keeps raw memory records, separating Jev relevance judgments from LLM search planning and answer generation. Results remain author-reported.",
+      "evidence_url": "https://arxiv.org/abs/2609.36059v1",
+      "reviewed_at": "2026-10-16T11:10:02+00:00",
+      "note": "Display-only expansion summary aligned with the existing curated entry and checked against the fixed-version primary abstract. Original ledger evidence and verification tier remain unchanged; no full-paper review or reproduction is claimed."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.26532",
+      "relevance": "Confidence-gated Jev control with LLM fallback; gains depend on action alternatives and baseline routing. Results remain author-reported.",
+      "evidence_url": "https://arxiv.org/abs/2609.26532v1",
+      "reviewed_at": "2026-10-16T11:10:02+00:00",
+      "note": "Display-only expansion summary aligned with the existing curated entry and checked against the fixed-version primary abstract. Original ledger evidence and verification tier remain unchanged; no full-paper review or reproduction is claimed."
+    },
+    {
+      "url": "https://arxiv.org/abs/2610.12292",
+      "relevance": "Tests option-channel attacks on seven open-weight models; reversed decisions can remain confident. The reported experiments do not test hosted Jev.",
+      "evidence_url": "https://arxiv.org/abs/2610.12292v1",
+      "reviewed_at": "2026-10-16T11:27:34+00:00",
+      "note": "Display-only scope clarification from the fixed-version original abstract. Keep the distinction between open-weight models and the hosted TypeSafe service explicit in the visible summary, not only in limitations. The raw abstract evidence and verification tier are unchanged."
+    },
+    {
+      "url": "https://arxiv.org/abs/2610.15710",
+      "relevance": "Jev memory-retirement evaluation separates confirmed updates from suggestions; mixed LLM/human labels, shared errors and selection on a small development set constrain cascade claims.",
+      "evidence_url": "https://arxiv.org/abs/2610.15710v1",
+      "reviewed_at": "2026-10-16T11:27:34+00:00",
+      "note": "Display-only scope clarification from the fixed-version original abstract. Name the mixed labeling and shared-error/selection mechanisms; avoid implying that Jev already distinguishes every confirmed change correctly. The raw abstract evidence and verification tier are unchanged."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.34024",
+      "relevance": "Preliminary medical-benchmark evaluation of Jev 1.13 reports task-dependent accuracy, calibration and weak unanswerable-question detection; it does not establish clinical deployment validity.",
+      "evidence_url": "https://arxiv.org/html/2609.34024v4",
+      "reviewed_at": "2026-10-16T12:07:43+00:00",
+      "note": "Display-only preliminary-status and clinical-scope clarification from the fixed-version manuscript notice. Original abstract evidence and grade remain unchanged; targeted notice inspection is not full-paper review."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.29429",
+      "title": "Just Ask Jev: Reinforcement Learning for Calibrated Decisions as a Zero-Shot Detector of AI Alignment Failures",
+      "relevance": "Benchmarks Jev alignment-failure detection while separating question wording from input context; benchmark-scorer labels dominate, and context gains often depend on fields encoding the label.",
+      "evidence_url": "https://arxiv.org/abs/2609.29429v1",
+      "reviewed_at": "2026-10-16T13:02:42.005734+00:00",
+      "note": "Display-only title and scope annotation from the original v1 abstract. Preserve the existing raw page/Hugging Face evidence, retrieval time and content-screened tier; no full-paper review or experiment reproduction."
+    },
+    {
+      "url": "https://arxiv.org/abs/2610.00346",
+      "title": "Benchmarking System One decision models against trained classifiers and language models for automated decision gates",
+      "first_submitted": "2026-09-29",
+      "topic": "direct-decision-research",
+      "relation": "direct",
+      "relevance": "A common-request harness compares typed decision models, generative readouts and trained classifiers; accuracy, selective coverage and out-of-scope acceptance depend on label access and task.",
+      "note": "Proposed display annotation based on the fixed original abstract and metadata. Preserve raw provider rows, their hashes and verification levels; no full-paper review or experimental reproduction.",
+      "evidence_url": "https://arxiv.org/abs/2610.00346v2",
+      "reviewed_at": "2026-10-16T13:15:58.427059+00:00"
+    },
+    {
+      "url": "https://arxiv.org/abs/2610.02076",
+      "title": "LLM-as-Jev: LLMs Are Already Jev-Style Decision Models -- When and How to Fine-Tune Them",
+      "first_submitted": "2026-10-01",
+      "topic": "direct-decision-research",
+      "relation": "direct",
+      "relevance": "Compares frozen Qwen decision readouts with optional KL-anchored fine-tuning and budgeted reasoning; reported gains depend on backbone size and routing workload, not disclosure of hosted Jev internals.",
+      "note": "Proposed display annotation based on the fixed original abstract and metadata. Preserve raw provider rows, their hashes and verification levels; no full-paper review or experimental reproduction.",
+      "evidence_url": "https://arxiv.org/abs/2610.02076v3",
+      "reviewed_at": "2026-10-16T13:15:58.427284+00:00"
+    },
+    {
+      "url": "https://arxiv.org/abs/2610.02293",
+      "title": "HakemBench: A Turkish Benchmark of Typed Decisions",
+      "first_submitted": "2026-10-01",
+      "topic": "direct-decision-research",
+      "relation": "direct",
+      "relevance": "Turkish typed-decision evaluation reports decision quality, Brier-based probability quality and risk–coverage alongside input probes; most labels are AI-derived, and the lab’s model used feedback from earlier test results.",
+      "note": "Proposed display annotation based on the fixed original abstract and metadata. Preserve raw provider rows, their hashes and verification levels; no full-paper review or experimental reproduction.",
+      "evidence_url": "https://arxiv.org/abs/2610.02293v1",
+      "reviewed_at": "2026-10-16T13:15:58.427291+00:00"
+    },
+    {
+      "url": "https://arxiv.org/abs/2510.01237",
+      "title": "Confidence-Aware Routing for Large Language Model Reliability Enhancement: A Multi-Signal Approach to Pre-Generation Hallucination Mitigation",
+      "first_submitted": "2025-09-23",
+      "relation": "background",
+      "topic": "confidence-routing",
+      "relevance": "Background on confidence-based routing among local generation, retrieval, larger models and human review; this is prior work rather than an empirical study of Jev.",
+      "evidence_url": "https://arxiv.org/abs/2510.01237v1",
+      "reviewed_at": "2026-10-16T13:18:34.028663+00:00",
+      "note": "Display-only title, first-submission date and scope review from the fixed primary abstract. Retain the original source record, body hash, retrieval time and content-screened grade; no full-paper review or experimental reproduction."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.08183",
+      "title": "NeoHorse-1: Towards Recursive Self-Improvement via Agentic Post-Training with Routing Harness",
+      "first_submitted": "2026-09-08",
+      "relation": "direct",
+      "topic": "decision-model-adaptation",
+      "relevance": "Agentic post-training and routing with a separate NeoHorse-Jev-4B typed-decision adaptation in v2; keep the broader family-level benchmark results separate from the adaptation.",
+      "evidence_url": "https://arxiv.org/abs/2609.08183v2",
+      "reviewed_at": "2026-10-16T13:18:34.037338+00:00",
+      "note": "Display-only title, first-submission date and scope review from the fixed primary abstract. Retain the original source record, body hash, retrieval time and content-screened grade; no full-paper review or experimental reproduction."
     }
   ]
 }

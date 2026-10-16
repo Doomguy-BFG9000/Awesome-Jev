@@ -83,6 +83,15 @@
                 "url": "https://docs.typesafe.ai/primitives/noul"
               }
             ]
+          },
+          {
+            "text": "Keep ordinal label usage, a Score mean, returned confidence, and probability calibration separate. In the tested models and datasets, the v2 ordinal-scale study reports concentrated final choices despite broad average candidate probabilities; finer scales increased compression, and accuracy gains did not necessarily restore utilization. Where a final label is selected, compare its frequency with reference-label frequencies; do not assume every level should occur equally often. Treat this as an additional diagnostic, not a calibration test. The findings are author-reported in the abstract, not our reproduction or evidence that Jev’s Score API has the same failure.",
+            "sources": [
+              {
+                "label": "Ordinal-scale utilization study, v2",
+                "url": "https://arxiv.org/abs/2609.38827v2"
+              }
+            ]
           }
         ]
       },
@@ -128,6 +137,155 @@
               {
                 "label": "Model versions",
                 "url": "https://docs.typesafe.ai/models"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "decision-model-baselines",
+        "title": "How should I compare decision models with trained classifiers and LLMs?",
+        "paragraphs": [
+          {
+            "text": "The v2 decision-gate benchmark reports that a fine-tuned DeBERTa-v3-large had the highest observed accuracy on all but one labeled benchmark. That result concerns access to task labels. For your comparison, separate settings with and without task-specific training labels; record data exposure, development/test splits, output formats and failures before comparing accuracy, selective coverage or cost.",
+            "sources": [
+              {
+                "label": "Decision-gate benchmark, v2",
+                "url": "https://arxiv.org/abs/2610.00346v2"
+              }
+            ]
+          },
+          {
+            "text": "LLM-as-Jev v3 studies frozen Qwen readouts, optional KL-anchored fine-tuning and budgeted reasoning. To distinguish these effects, we recommend a frozen comparator with the same backbone, explicit option sets and splits, and separately recorded reasoning budgets. The reported comparisons concern two Qwen backbones and an independent framework; they do not reveal hosted Jev’s training or architecture.",
+            "sources": [
+              {
+                "label": "LLM-as-Jev, v3",
+                "url": "https://arxiv.org/abs/2610.02076v3"
+              }
+            ]
+          },
+          {
+            "text": "HakemBench v1 states that most Turkish reference labels are AI-derived, not human-verified, and that earlier test results influenced the lab’s own model on flagged tracks. Report label provenance, known prior test exposure and per-track metric components. Translation probes should remain separate from independent language validation. These are proposed comparison checks; this collection has not reproduced the studies.",
+            "sources": [
+              {
+                "label": "HakemBench, v1",
+                "url": "https://arxiv.org/abs/2610.02293v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "confidence-transfer",
+        "title": "Can I reuse a confidence gate across languages or domains?",
+        "paragraphs": [
+          {
+            "text": "Before reusing a confidence gate in a new language or domain, build a target-specific test set with explicit label definitions and annotation provenance; translated or model-generated labels are not independent human validation. Compare the unchanged gate with a threshold tuned only on separate target-domain validation data. Report accepted-case error and coverage per group, including high-confidence errors under independently checked, answer-preserving context additions.",
+            "sources": []
+          },
+          {
+            "text": "The social-science audit reports task-dependent confidence failures using benchmark labels; JevOut’s human checks cover only sampled successful perturbations. Neither abstract establishes multilingual transfer. Language-specific label checks and threshold-transfer comparisons are our proposed protocol, not reproduced findings or population-wide guarantees.",
+            "sources": [
+              {
+                "label": "Social-science annotation audit, v2",
+                "url": "https://arxiv.org/abs/2609.24574v2"
+              },
+              {
+                "label": "JevOut, v2",
+                "url": "https://arxiv.org/abs/2609.30243v2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tables-and-cited-evidence",
+        "title": "How should I test decisions over tables and cited evidence?",
+        "paragraphs": [
+          {
+            "text": "Separate schema validity, stability under content-preserving changes, and semantic correctness against reference labels. For tables, pair original inputs with alternative layouts or row/column reorderings only when meaning is preserved. Keep values, relationships and arithmetic fixed, then compare choices and probability distributions. A stable answer can still be wrong; low confidence alone does not identify an error.",
+            "sources": [
+              {
+                "label": "Tabular decision preprint, v1",
+                "url": "https://arxiv.org/abs/2610.19536v1"
+              }
+            ]
+          },
+          {
+            "text": "For citations, keep the claim and arithmetic fixed while swapping same-number passages that support a different financial role. Include equivalent valid evidence as positive controls, and measure false acceptance of mismatches and false rejection of valid support separately. Inspect paired disagreements rather than counting every changed answer as wrong. These constructed cases are diagnostic probes, not estimates of error rates in real traffic.",
+            "sources": [
+              {
+                "label": "Same-number citation preprint, v1",
+                "url": "https://arxiv.org/abs/2610.08675v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tool-arguments-and-option-channels",
+        "title": "How should I test tool arguments and option-channel risks?",
+        "paragraphs": [
+          {
+            "text": "Separate schema validity, whether cited evidence supports a proposed argument, and whether the argument follows from the request, history and schema defaults. Test correct defaults or inferred values without explicit references, alongside incorrect values paired with visible references. Reference availability is not derivation correctness. If a model writes references from the full history, hide the candidate from it and verify its output; generated references are not ground truth.",
+            "sources": [
+              {
+                "label": "Tool-argument verification preprint, v1",
+                "url": "https://arxiv.org/abs/2610.18497v1"
+              }
+            ]
+          },
+          {
+            "text": "Define who can alter request text, tool outputs, option names and policy definitions. Test each channel your threat model lets an attacker control, including confidence on incorrect decisions. The cited guardrail experiments concern open-weight typed-decision models, not a demonstrated compromise of hosted Jev. This is a proposed evaluation protocol, not a reproduced result.",
+            "sources": [
+              {
+                "label": "Option-channel guardrail preprint, v1",
+                "url": "https://arxiv.org/abs/2610.12292v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "attack-success-rates",
+        "title": "What does an attack success rate measure?",
+        "paragraphs": [
+          {
+            "text": "Define the outcome and denominator before calling an attack successful. Probability shifts, action changes, attacker-target selections and downstream harm are different outcomes. Same Attack measures pass-after-attack only among malicious cases each judge flagged when clean. Its separate Jev gate-bypass measure requires a less restrictive action with returned confidence for the severity Score ≥0.7; review can qualify, while low-confidence pass need not.",
+            "sources": [
+              {
+                "label": "Same Attack metric definitions, v1",
+                "url": "https://arxiv.org/html/2610.17820v1#S4.SS5"
+              }
+            ]
+          },
+          {
+            "text": "Compare attacks with matched unchanged requests using the same decision rule. JevAdvBench distinguishes a changed most-likely Score level from a changed expected score. For adaptive search, separate optimization calls from validation: Decision Hijacking freezes candidates, then uses five fresh calls and requires at least three target selections for case-level success. This finite-repeat rule does not guarantee later success.",
+            "sources": [
+              {
+                "label": "JevAdvBench typed metrics, v1",
+                "url": "https://arxiv.org/html/2609.31142v1#S1.p4.1"
+              },
+              {
+                "label": "Decision Hijacking validation, v1",
+                "url": "https://arxiv.org/html/2609.28613v1#S4.SS4"
+              }
+            ]
+          },
+          {
+            "text": "Decision Hijacking reports 51 target selections in 2,550 calls for one condition, but 11 majority-success cases out of 510: the denominators answer different questions. Same Attack reports 75% raw severity changes on repeated Jev moderation calls but only 1% routed-action changes. These are author-reported examples, not reproduced results or a ranking. Check answer preservation and delivery separately; equal token counts alone do not prove that an edit was removed.",
+            "sources": [
+              {
+                "label": "Call-level and case-level counts, v1",
+                "url": "https://arxiv.org/html/2609.28613v1#A1.SS4.p2.1"
+              },
+              {
+                "label": "Raw versus routed instability, v1",
+                "url": "https://arxiv.org/html/2610.17820v1#A2"
+              },
+              {
+                "label": "Delivery inference limits, v1",
+                "url": "https://arxiv.org/html/2609.31142v1#S3.SS3.p3.1"
               }
             ]
           }
@@ -188,6 +346,47 @@
               {
                 "label": "Decision Index methodology snapshot",
                 "url": "https://huggingface.co/spaces/multimodalart/jev-decision-index/blob/5d09dd9cf226338c68fad22284c4982e6680af7d/data/methodology.json"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "reproduction-boundaries",
+        "title": "What can I reproduce from a public research artifact?",
+        "paragraphs": [
+          {
+            "text": "Name what you want to reproduce: tables or plots from scored summaries, metrics from released per-example answers, fresh predictions, or a trained checkpoint. Map each output to its required inputs, versions and hashes. Report whether materials were only inspected, commands were executed, or outputs were matched; these are different claims.",
+            "sources": []
+          },
+          {
+            "text": "Visual Jev’s pinned reproduction guide describes regenerating specified tables and two plots from scored JSON without a GPU. Other figures need omitted per-example predictions and intervention analyses. Fresh predictions require upstream corpora, backbone weights and a GPU; source images are not redistributed.",
+            "sources": [
+              {
+                "label": "Visual Jev reproduction guide, pinned commit",
+                "url": "https://github.com/guanxuyu-sv/Visual-Jev/blob/a392eaedfa41adae348f9767b55c0f54b3a13b57/REPRODUCE.md"
+              }
+            ]
+          },
+          {
+            "text": "The observed ordinal-scale artifact documents metric recomputation from released answers. Fresh inference is separate: source text, weights and post-trained checkpoints are omitted, and missing historical data revisions can prevent a reconstruction matching recorded hashes. Its opaque file revision is not an immutable Git commit. Preserve mismatches rather than silently substituting current data.",
+            "sources": [
+              {
+                "label": "Ordinal-scale study, v2",
+                "url": "https://arxiv.org/abs/2609.38827v2"
+              },
+              {
+                "label": "Observed anonymous README, opaque file revision",
+                "url": "https://anonymous.4open.science/api/repo/jev_ordinal_scale_bia/file/README.md?v=3ed72968"
+              }
+            ]
+          },
+          {
+            "text": "The radiology paper’s v1 availability statement says analysis scripts and aggregate results are being prepared for release. Third-party dataset links do not supply those missing author outputs. Our checks concern documentation and selected file inventories; we have not executed these reproduction routes or independently reproduced their results.",
+            "sources": [
+              {
+                "label": "Radiology availability statement, v1",
+                "url": "https://arxiv.org/html/2609.27607v1#Sx1.p1"
               }
             ]
           }
@@ -278,6 +477,15 @@
                 "url": "https://docs.typesafe.ai/primitives/noul"
               }
             ]
+          },
+          {
+            "text": "应区分有序等级的使用分布、Score 均值、返回的置信度与概率校准。该量表研究 v2 在所测模型与数据集上报告：最终选择集中，即使平均候选概率分布较宽；细化量表加剧压缩，提高准确率也未必恢复等级使用。若系统最终选择一个等级，可将其频率与参考标签频率比较，而非假设各等级应均匀出现。这是额外诊断，不是校准检验。上述研究发现来自作者摘要，未经本项目复现，也不能据此断言 Jev 的 Score API 存在同样问题。",
+            "sources": [
+              {
+                "label": "有序量表使用偏差研究 v2",
+                "url": "https://arxiv.org/abs/2609.38827v2"
+              }
+            ]
           }
         ]
       },
@@ -323,6 +531,155 @@
               {
                 "label": "模型版本",
                 "url": "https://docs.typesafe.ai/models"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "decision-model-baselines",
+        "title": "怎样比较决策模型、已训练分类器与语言模型？",
+        "paragraphs": [
+          {
+            "text": "决策门控基准 v2 报告，在有标签基准中，微调后的 DeBERTa-v3-large 除一项外均取得最高观察准确率；这一结果以可取得任务标签为条件。实际比较时，应分开报告有无任务训练标签的设置，并记录数据接触、开发/测试划分、输出格式与失败，再比较准确率、选择性覆盖或成本。",
+            "sources": [
+              {
+                "label": "决策门控基准 v2",
+                "url": "https://arxiv.org/abs/2610.00346v2"
+              }
+            ]
+          },
+          {
+            "text": "LLM-as-Jev v3 研究冻结 Qwen 的读出、带 KL 锚定的可选微调及限预算推理。为区分这些影响，我们建议保留同骨干的冻结基线，明确选项集合和数据划分，并单独记录推理预算。所报比较针对两个 Qwen 骨干及一个独立框架，不能据此揭示托管 Jev 的训练或架构。",
+            "sources": [
+              {
+                "label": "LLM-as-Jev v3",
+                "url": "https://arxiv.org/abs/2610.02076v3"
+              }
+            ]
+          },
+          {
+            "text": "HakemBench v1 明确说明，多数土耳其语参考标签由 AI 生成、未经人工核验；实验室自身模型在被标记的任务上还受过先前测试结果的影响。应报告标签来源、既往测试集使用情况和逐任务指标分量，将翻译探查与独立的语言验证分开。这些是建议的比较检查，本资源库未复现上述研究。",
+            "sources": [
+              {
+                "label": "HakemBench v1",
+                "url": "https://arxiv.org/abs/2610.02293v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "confidence-transfer",
+        "title": "置信度门控可以直接迁移到其他语言或领域吗？",
+        "paragraphs": [
+          {
+            "text": "将置信度门控用于新的语言或领域前，应构建目标测试集，明确标签定义与标注来源；翻译标签或模型生成的标签不等于独立人工验证。比较沿用原门控与仅在单独目标领域验证集上调节阈值的方案，分别报告各组的接纳样本错误率和覆盖率，并检查经独立核验、保持答案不变的上下文补充是否造成高置信错误。",
+            "sources": []
+          },
+          {
+            "text": "社会科学标注论文使用基准标签，报告了随任务变化的置信度失效；JevOut 的人工检查仅覆盖成功扰动中的抽样子集。两篇摘要均未确立多语言迁移结论。分语言标签检查与阈值迁移比较是本项目建议的流程，并非已复现结果或总体保证。",
+            "sources": [
+              {
+                "label": "社会科学标注评测 v2",
+                "url": "https://arxiv.org/abs/2609.24574v2"
+              },
+              {
+                "label": "JevOut v2",
+                "url": "https://arxiv.org/abs/2609.30243v2"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tables-and-cited-evidence",
+        "title": "怎样测试模型对表格与引用证据的决策？",
+        "paragraphs": [
+          {
+            "text": "分别评估输出结构合法性、保持内容不变时的稳定性，以及相对于参考标签的语义正确性。对表格，将原输入与不同版式或行列重排配对，但仅在含义不变时进行；保持数值、关系和算术不变，再比较选项与概率分布。答案稳定仍可能错误；不能仅凭低置信度判定错误。",
+            "sources": [
+              {
+                "label": "表格决策预印本 v1",
+                "url": "https://arxiv.org/abs/2610.19536v1"
+              }
+            ]
+          },
+          {
+            "text": "对引用证据，固定待验证的主张和算术，将引文替换为数值相同、却对应不同财务项目的段落。保留等价有效证据作为正对照，分别统计误接纳错配证据与误拒绝有效支持的情况。检查配对差异，不把每次答案变化都当作错误。这些构造案例只是诊断探针，不能据此估计真实流量中的错误率。",
+            "sources": [
+              {
+                "label": "同数值引用替换预印本 v1",
+                "url": "https://arxiv.org/abs/2610.08675v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tool-arguments-and-option-channels",
+        "title": "怎样测试工具参数核验与选项通道风险？",
+        "paragraphs": [
+          {
+            "text": "分别检查 schema 合法性、引用证据是否支持提议参数值，以及该值是否能由请求、历史和 schema 默认值推导出来。测试没有显式参考的正确默认值或推导值，也测试配有可见参考的错误值；参考存在不等于推导正确。若模型根据完整历史生成参考，应对参考生成器隐藏候选值，并核查输出；生成的参考不是真值。",
+            "sources": [
+              {
+                "label": "工具参数核验预印本 v1",
+                "url": "https://arxiv.org/abs/2610.18497v1"
+              }
+            ]
+          },
+          {
+            "text": "明确谁能改动请求文本、工具输出、选项名称和政策定义，分别测试威胁模型允许攻击者控制的通道，包括错误决策时的置信度。所引防护实验针对开放权重的类型化决策模型，并未证明托管 Jev 已被攻破。这是建议的评估流程，不是已复现结果。",
+            "sources": [
+              {
+                "label": "选项通道防护预印本 v1",
+                "url": "https://arxiv.org/abs/2610.12292v1"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "attack-success-rates",
+        "title": "攻击成功率究竟衡量什么？",
+        "paragraphs": [
+          {
+            "text": "在称攻击成功前，先定义所测结果与分母。概率偏移、动作改变、攻击目标被选中和后续危害是不同结果。Same Attack 只在各裁判未攻击时已标记的恶意案例中计算攻击后变为放行（pass）的比例。它另行计算的 Jev 门控绕过要求动作放宽且严重程度 Score 的置信度 ≥0.7；改为复核（review）也可能满足条件，低于阈值的放行则不满足置信度条件。",
+            "sources": [
+              {
+                "label": "Same Attack 指标定义 v1",
+                "url": "https://arxiv.org/html/2610.17820v1#S4.SS5"
+              }
+            ]
+          },
+          {
+            "text": "用同一决策规则，将攻击与匹配的原样请求比较。JevAdvBench 区分 Score 最可能等级变化和期望分数变化。自适应搜索应将优化调用与验证分开：Decision Hijacking 冻结候选后另发五次新调用，至少三次选中目标才算案例级成功。这种有限重复规则不保证以后的调用也成功。",
+            "sources": [
+              {
+                "label": "JevAdvBench 类型化指标 v1",
+                "url": "https://arxiv.org/html/2609.31142v1#S1.p4.1"
+              },
+              {
+                "label": "Decision Hijacking 验证协议 v1",
+                "url": "https://arxiv.org/html/2609.28613v1#S4.SS4"
+              }
+            ]
+          },
+          {
+            "text": "Decision Hijacking 的一个条件在 2,550 次调用中选中目标 51 次，但多数成功案例为 510 个中的 11 个，两个分母回答不同问题。Same Attack 报告 Jev 重复内容审核调用的原始严重程度评分有 75% 变化，路由动作却仅 1%。这些是作者报告的例子，不是本项目复现结果或排名。应另查编辑是否保持答案、是否送达；token 数相同本身不证明编辑被移除。",
+            "sources": [
+              {
+                "label": "调用级与案例级计数 v1",
+                "url": "https://arxiv.org/html/2609.28613v1#A1.SS4.p2.1"
+              },
+              {
+                "label": "数值与路由波动 v1",
+                "url": "https://arxiv.org/html/2610.17820v1#A2"
+              },
+              {
+                "label": "送达推断限制 v1",
+                "url": "https://arxiv.org/html/2609.31142v1#S3.SS3.p3.1"
               }
             ]
           }
@@ -383,6 +740,47 @@
               {
                 "label": "Decision Index 方法快照",
                 "url": "https://huggingface.co/spaces/multimodalart/jev-decision-index/blob/5d09dd9cf226338c68fad22284c4982e6680af7d/data/methodology.json"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "reproduction-boundaries",
+        "title": "公开研究材料能支持哪一种复现？",
+        "paragraphs": [
+          {
+            "text": "先明确要复现什么：由已评分汇总重建表图、由已发布逐样本答案重算指标、生成新预测，还是训练出检查点。将每项输出对应到所需输入、版本和哈希。分别报告只检查了材料、执行了命令，还是输出已经匹配；这些不是同一种主张。",
+            "sources": []
+          },
+          {
+            "text": "Visual Jev 固定提交的复现指南说明，可用评分 JSON 在无 GPU 时重建指定表格与两幅图；其他图还需未附带的逐样本预测和干预分析。新推理需要上游语料、骨干权重和 GPU，项目不再分发源图像。",
+            "sources": [
+              {
+                "label": "Visual Jev 复现指南，固定提交",
+                "url": "https://github.com/guanxuyu-sv/Visual-Jev/blob/a392eaedfa41adae348f9767b55c0f54b3a13b57/REPRODUCE.md"
+              }
+            ]
+          },
+          {
+            "text": "所查有序量表资产说明如何从已发布答案重算指标。新推理是另一个流程：源文本、权重和后训练检查点未分发，缺失的历史数据版本可能使重建输入无法匹配记录的哈希。其文件修订标识不透明，并非不可变 Git 提交。应保留不匹配记录，不静默换用当前数据。",
+            "sources": [
+              {
+                "label": "有序量表研究 v2",
+                "url": "https://arxiv.org/abs/2609.38827v2"
+              },
+              {
+                "label": "所查匿名 README，文件修订标识不透明",
+                "url": "https://anonymous.4open.science/api/repo/jev_ordinal_scale_bia/file/README.md?v=3ed72968"
+              }
+            ]
+          },
+          {
+            "text": "放射学论文 v1 的可用性声明说，分析脚本与汇总结果仍在准备发布。第三方数据链接不能替代这些缺失的作者输出。本项目核查限于文档与部分文件目录，未执行上述复现流程，也未独立复现其结果。",
+            "sources": [
+              {
+                "label": "放射学论文材料声明 v1",
+                "url": "https://arxiv.org/html/2609.27607v1#Sx1.p1"
               }
             ]
           }
