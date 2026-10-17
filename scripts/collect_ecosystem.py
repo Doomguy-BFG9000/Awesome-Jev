@@ -331,8 +331,8 @@ def main():
     def save():
         kept = [(u, r) for u, r in sorted(results.items()) if eligible(r)]
         excluded = [dict(r, exclusion_reason="Explicit Jev, TypeSafe AI, or typed-decision content was not established for this one-hop implementation; excluded from checked-source totals.") for u, r in sorted(results.items()) if not eligible(r)]
-        out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for _, r in kept), encoding="utf-8")
-        out.with_suffix(".excluded.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in excluded), encoding="utf-8")
+        out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for _, r in kept), encoding="utf-8", newline="\n")
+        out.with_suffix(".excluded.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in excluded), encoding="utf-8", newline="\n")
     for depth in range(args.max_depth + 1):
         batch = [s for u, s in seeds.items() if u not in results and s["discovery_depth"] == depth]
         print(json.dumps({"phase": "screen", "depth": depth, "pending": len(batch)}, ensure_ascii=False), flush=True)

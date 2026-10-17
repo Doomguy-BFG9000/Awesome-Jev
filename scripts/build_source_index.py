@@ -169,7 +169,7 @@ def main() -> None:
         for name, text in files.items():
             destination = ROOT / name
             destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(text, encoding="utf-8")
+            destination.write_text(text, encoding="utf-8", newline="\n")
     print(json.dumps(payload["counts"], indent=2))
 
 
