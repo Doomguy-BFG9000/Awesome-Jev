@@ -82,7 +82,7 @@ def build() -> dict:
     for name in ("ecosystem-sources.jsonl", "research-sources.jsonl"):
         source = ROOT / "data" / name
         if source.exists():
-            for line in source.read_text().split("\n"):
+            for line in source.read_text(encoding="utf-8").split("\n"):
                 if line.strip():
                     row = json.loads(line)
                     row["ledger"] = name
